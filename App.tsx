@@ -1,26 +1,31 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
   View,
+  SafeAreaView,
   FlatList,
   ActivityIndicator,
-  Switch,
   Alert,
-  RefreshControl,
-  SafeAreaView,
   Platform,
 } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import MovieCard, { Movie } from './components/MovieCard';
 
 const API_URL = 'https://6abb5c13b2118ed7abb856d1.mockapi.io/movies';
 
+interface MovieItem {
+  id: string;
+  title: string;
+  genre: string;
+  year: number;
+  rating: number;
+  poster: string;
+  isShowing: boolean;
+}
+
 export default function App() {
-  const [movies, setMovies] = useState<Movie[]>([]);
+  const [movies, setMovies] = useState<MovieItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [refreshing, setRefreshing] = useState<boolean>(false);
-  const [isTile, setIsTile] = useState<boolean>(false);
 
   // Câu 2
   const fetchMovies = async () => {
@@ -29,15 +34,14 @@ export default function App() {
       const data = await response.json();
       setMovies(data);
     } catch (error) {
-      const msg = 'Không thể kết nối đến máy chủ lấy dữ liệu';
+      const msg = 'Không thể kết nối máy chủ';
       if (Platform.OS === 'web') {
-        window.alert(`[Lỗi]: ${msg}`);
+        window.alert(msg);
       } else {
         Alert.alert('Lỗi', msg);
       }
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
@@ -45,46 +49,14 @@ export default function App() {
     fetchMovies();
   }, []);
 
-  // Câu 6
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchMovies();
-  }, []);
-
-  // Câu 3c
-  const handleSelectMovie = useCallback(
-    (id: string) => {
-      const selected = movies.find((item) => String(item.id) === String(id));
-      if (selected) {
-        const message = `Bạn chọn phim: ${selected.title}`;
-        if (Platform.OS === 'web') {
-          window.alert(message);
-        } else {
-          Alert.alert('Thông tin', message);
-        }
-      }
-    },
-    [movies]
-  );
-
-  const numColumns = isTile ? 2 : 1;
-
   return (
     // Câu 1a
     <SafeAreaProvider>
       {/* Câu 1b */}
       <SafeAreaView style={styles.container}>
-        {/* Câu 1c & Câu 5a */}
+        {/* Câu 1c */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Movie App</Text>
-          <View style={styles.switchWrapper}>
-            <Text style={styles.switchLabel}>Dạng lưới</Text>
-            {/* Câu 5a */}
-            <Switch
-              value={isTile}
-              onValueChange={(val) => setIsTile(val)}
-            />
-          </View>
         </View>
 
         {/* Câu 2b */}
@@ -93,26 +65,20 @@ export default function App() {
             <ActivityIndicator size="large" color="#007bff" />
           </View>
         ) : (
-          /* Câu 2a & Câu 5b, 5c, 5d */
+          /* Câu 2a */
           <FlatList
-            key={String(numColumns)} // Câu 5c
             data={movies}
-            numColumns={numColumns} // Câu 5b
             keyExtractor={(item) => String(item.id)}
             renderItem={({ item }) => (
-              // Câu 3 & Câu 4
-              <MovieCard
-                movie={item}
-                layout={isTile ? 'tile' : 'row'} // Câu 5b
-                onSelect={handleSelectMovie} // Câu 3c
-              />
+              <View style={styles.itemRow}>
+                <View style={styles.itemInfo}>
+                  <Text style={styles.itemTitle}>{item.title}</Text>
+                  <Text style={styles.itemSub}>⭐ {Number(item.rating).toFixed(1)}</Text>
+                </View>
+                <Text style={styles.itemStatus}>{item.isShowing ? '✅' : '❌'}</Text>
+              </View>
             )}
             contentContainerStyle={styles.listContent}
-            columnWrapperStyle={isTile ? styles.columnWrapper : undefined} // Câu 5d
-            refreshControl={
-              // Câu 6a
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
           />
         )}
       </SafeAreaView>
@@ -126,9 +92,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f7',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: '#ffffff',
@@ -140,15 +103,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333333',
   },
-  switchWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  switchLabel: {
-    fontSize: 14,
-    marginRight: 6,
-    color: '#555555',
-  },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -157,8 +111,32 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 10,
   },
-  columnWrapper: {
+  itemRow: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    padding: 14,
     marginBottom: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  itemInfo: {
+    flex: 1,
+  },
+  itemTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#222222',
+  },
+  itemSub: {
+    fontSize: 13,
+    color: '#e67e22',
+    marginTop: 4,
+    fontWeight: '600',
+  },
+  itemStatus: {
+    fontSize: 16,
   },
 });
