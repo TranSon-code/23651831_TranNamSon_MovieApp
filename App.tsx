@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
@@ -10,21 +10,12 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import MovieCard, { Movie } from './components/MovieCard';
 
 const API_URL = 'https://6abb5c13b2118ed7abb856d1.mockapi.io/movies';
 
-interface MovieItem {
-  id: string;
-  title: string;
-  genre: string;
-  year: number;
-  rating: number;
-  poster: string;
-  isShowing: boolean;
-}
-
 export default function App() {
-  const [movies, setMovies] = useState<MovieItem[]>([]);
+  const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Câu 2
@@ -49,6 +40,22 @@ export default function App() {
     fetchMovies();
   }, []);
 
+  // Câu 3c
+  const handleSelectMovie = useCallback(
+    (id: string) => {
+      const selected = movies.find((item) => String(item.id) === String(id));
+      if (selected) {
+        const msg = `Bạn chọn phim: ${selected.title}`;
+        if (Platform.OS === 'web') {
+          window.alert(msg);
+        } else {
+          Alert.alert('Thông tin', msg);
+        }
+      }
+    },
+    [movies]
+  );
+
   return (
     // Câu 1a
     <SafeAreaProvider>
@@ -70,13 +77,12 @@ export default function App() {
             data={movies}
             keyExtractor={(item) => String(item.id)}
             renderItem={({ item }) => (
-              <View style={styles.itemRow}>
-                <View style={styles.itemInfo}>
-                  <Text style={styles.itemTitle}>{item.title}</Text>
-                  <Text style={styles.itemSub}>⭐ {Number(item.rating).toFixed(1)}</Text>
-                </View>
-                <Text style={styles.itemStatus}>{item.isShowing ? '✅' : '❌'}</Text>
-              </View>
+              // Câu 3 & Câu 4a
+              <MovieCard
+                movie={item}
+                layout="row"
+                onSelect={handleSelectMovie}
+              />
             )}
             contentContainerStyle={styles.listContent}
           />
@@ -110,33 +116,5 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 10,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    padding: 14,
-    marginBottom: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  itemInfo: {
-    flex: 1,
-  },
-  itemTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#222222',
-  },
-  itemSub: {
-    fontSize: 13,
-    color: '#e67e22',
-    marginTop: 4,
-    fontWeight: '600',
-  },
-  itemStatus: {
-    fontSize: 16,
   },
 });
